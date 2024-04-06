@@ -1,0 +1,75 @@
+unmanaged;
+//strict ( 2 );
+
+define behavior for ZIU_I_TRAVEL_U alias Travel
+implementation in class zbp_iu_i_travel_u unique
+lock master
+//authorization master ( instance )
+etag master Lastchangedat
+{
+  create;
+  update;
+  delete;
+  association _Booking { create; }
+
+  field ( read only ) TravelID;
+  field ( mandatory ) AgencyID, CustomerID, BeginDate, EndDate;
+
+  // we specidy the mapping between the CDS view field names and the field names that are used by our legacy Business logic
+  //That means by our FMs that we use to create, update, and delete flight data
+  // control explanation. When accessing the legacy code, the developer would normally have to use "corresponding with mapping" in many places to map input from
+  // derived types, such as type table for create or type table for action import to klegacy code and vice versa
+  // to map legacy results to output-derived types, such as type table for action result, type table for read result, or failed
+  // in legacy scenarios that are based on BAPIs, so-called control structures or x-structures are used.
+  // These structures have the same field name, besided the only exception is the key field, as the normal structure but they have the type CHAR1
+  // to tell the BAPI which of the transfered fields contain a value via true or false
+  // This type has the same function as the %CONTROL structure in the input-derived types,
+  // which are used by the RAP Framework to indicate which of the fields in the main structure are accessed by an operation , update, read and so on
+  // But since the datatype in the %CONTROL structure of the RAP framework differs from  the one being used by the BAPIs , we must perform a mapping here as well
+  //The solution is now to inroduce a central declarative mapping within the behavior definition instead of many corresponding statements in the code
+  // this improves maintainbility of the application's source code
+  mapping for /dmo/travel control zsrap_travel_x_iu
+    {
+      TravelId      = travel_id;
+      AgencyId      = AGENCY_ID;
+      CustomerId    = CUSTOMER_ID;
+      BeginDate     = BEGIN_DATE;
+      EndDate       = END_DATE;
+      BookingFee    = BOOKING_FEE;
+      TotalPrice    = TOTAL_PRICE;
+      CurrencyCode  = CURRENCY_CODE;
+      Description   = DESCRIPTION;
+      Status        = STATUS;
+      Createdby     = CREATEDBY;
+      Createdat     = CREATEDAT;
+      Lastchangedby = LASTCHANGEDBY;
+      Lastchangedat = LASTCHANGEDAT;
+    }
+}
+
+define behavior for ZIU_I_BOOKING_U alias Booking
+implementation in class zbp_iu_i_booking_u unique
+lock dependent by _Travel
+//authorization dependent by _Travel
+etag dependent by _Travel
+{
+  update;
+  delete;
+  association _Travel;
+
+  field ( read only ) TravelID, BookingID;
+  field ( mandatory ) BookingDate, CustomerID, CarrierId, ConnectionID, FlightDate;
+
+  mapping for /dmo/booking control zsrap_booking_x_iu
+    {
+      TravelId     = TRAVEL_ID;
+      BookingId    = BOOKING_ID;
+      BookingDate  = BOOKING_DATE;
+      CustomerId   = CUSTOMER_ID;
+      CarrierId    = CARRIER_ID;
+      ConnectionId = CONNECTION_ID;
+      FlightDate   = FLIGHT_DATE;
+      FlightPrice  = FLIGHT_PRICE;
+      CurrencyCode = CURRENCY_CODE;
+    }
+}
