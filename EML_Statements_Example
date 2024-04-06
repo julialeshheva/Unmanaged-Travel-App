@@ -1,0 +1,135 @@
+CLASS ziu_cl_rap_eml DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC .
+
+  PUBLIC SECTION.
+    INTERFACES if_oo_adt_classrun.
+  PROTECTED SECTION.
+  PRIVATE SECTION.
+ENDCLASS.
+
+
+
+CLASS ZIU_CL_RAP_EML IMPLEMENTATION.
+
+
+  METHOD if_oo_adt_classrun~main.
+*    "step 1 - Read. Only the key field TravelUUID will be filled
+*
+*    READ ENTITIES OF zi_iu_travel
+*      ENTITY Travel                                                          "we need to specify the entity for which we want to perform the operation
+*        FROM VALUE #( ( TravelUUID = '812B6C10F07FA2BA18001F56B848D192' ) )  " specify the list of keys for which we want to perform the read operation
+*        RESULT DATA(travels).
+*    out->write( travels ).
+*
+
+*    "step 2 - Read with fields AgencyID CustomerID. As a result only AgencyID , CustomerID, TravelUUID will have values
+*
+*    READ ENTITIES OF zi_iu_travel
+*      ENTITY Travel
+*        FIELDS (  AgencyID CustomerID )
+*        WITH VALUE #( ( TravelUUID = '812B6C10F07FA2BA18001F56B848D192' ) )
+*        RESULT DATA(travels).
+*    out->write( travels ).
+
+    "step 3 - Read all fields
+
+*    READ ENTITIES OF zi_iu_travel
+*      ENTITY Travel
+*        ALL FIELDS WITH VALUE #( ( TravelUUID = '812B6C10F07FA2BA18001F56B848D192' ) )
+*        RESULT DATA(travels).
+*    out->write( travels ).
+
+    " step 4 - Perform READ by association following the association defined in the Behavior Definition
+    " As a result, we get all bookings with all fields associated to this Travel
+*    READ ENTITIES OF zi_iu_travel
+*      ENTITY Travel by \_Booking
+*        ALL FIELDS WITH VALUE #( ( TravelUUID = '812B6C10F07FA2BA18001F56B848D192' ) )
+*        RESULT DATA(bookings).
+*    out->write( bookings ).
+
+    "When performing EML READ operations, you should not only consider the result table, but also take the failed and reported into account
+    "Failed is used to convey unsuccessful operations
+    "Reported as optionally used to provide related T100 messages
+
+    " step 5 - Perform READ of a UUID that doesn't exist
+
+*    READ ENTITIES OF zi_iu_travel
+*      ENTITY Travel
+*        ALL FIELDS WITH VALUE #( ( TravelUUID = '82' ) )
+*        RESULT DATA(travels)
+*        FAILED DATA(failed)
+*        REPORTED DATA(reported).
+*
+*    out->write( travels ).
+*    out->write( failed ).
+*    out->write( reported ).
+
+    " step 6 - Perform a modify, updating the description of our Travel Record
+
+*    MODIFY ENTITIES OF zi_iu_travel
+*      ENTITY travel
+*        UPDATE
+*            SET FIELDS WITH VALUE
+*              #( ( TravelUUID  = '812B6C10F07FA2BA18001F56B848D192'
+*                   Description = 'New description' ) )
+*      FAILED DATA(failed)
+*      REPORTED DATA(reported).
+*
+*    COMMIT ENTITIES
+*      RESPONSE OF zi_iu_travel
+*      FAILED DATA(failed_commit)
+*      REPORTED DATA(reported_commit).
+*
+*    READ ENTITIES OF zi_iu_travel
+*      ENTITY Travel
+*        ALL FIELDS WITH VALUE #( ( TravelUUID = '812B6C10F07FA2BA18001F56B848D192' ) )
+*        RESULT DATA(travels).
+*    out->write( travels ).
+
+    " step 6 - Create a new entry
+
+*    MODIFY ENTITIES OF zi_iu_travel
+*      ENTITY travel
+*        CREATE
+*            SET FIELDS WITH VALUE
+*              #( ( %cid        = 'MyContentID_1'
+*                   AgencyID    = '070007'
+*                   CustomerID  = '14'
+*                   BeginDate   = cl_abap_context_info=>get_system_date( )
+*                   EndDate     = cl_abap_context_info=>get_system_date( ) + 10
+*                   Description = 'New entry' ) )
+*      MAPPED DATA(mapped)  " maps the created instance to the provided content ID
+*      FAILED DATA(failed)
+*      REPORTED DATA(reported).
+*
+*    COMMIT ENTITIES
+*      RESPONSE OF zi_iu_travel
+*      FAILED DATA(failed_commit)
+*      REPORTED DATA(reported_commit).
+*
+*      out->write( mapped-travel ). " MyContentID_1 is mapped to the provided value 06F233940C6A1EDEADADE0FBEEB9D19B
+*
+*    READ ENTITIES OF zi_iu_travel
+*      ENTITY Travel
+*        ALL FIELDS WITH VALUE #( ( TravelUUID = '06F233940C6A1EDEADADE0FBEEB9D19B' ) )
+*        RESULT DATA(travels).
+*    out->write( travels ).
+
+    " step 7 - Delete entry
+    MODIFY ENTITIES OF zi_iu_travel
+      ENTITY travel
+        DELETE FROM
+            VALUE
+              #( ( TravelUUID = '06F233940C6A1EDEADADE0FBEEB9D19B' ) )
+      FAILED DATA(failed)
+      REPORTED DATA(reported).
+
+    COMMIT ENTITIES
+      RESPONSE OF zi_iu_travel
+      FAILED DATA(failed_commit)
+      REPORTED DATA(reported_commit).
+
+  ENDMETHOD.
+ENDCLASS.
